@@ -1,10 +1,19 @@
 package com.ajay.interception;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.lang.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +26,27 @@ public class RequestInterceptor implements HandlerInterceptor {
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws ServletException {
     log.info("Inside prehandle");
-    return false;
+    TokenBasedAuthentication tokenBasedAuthentication =
+        (TokenBasedAuthentication) SecurityContextHolder.getContext().getAuthentication();
+    Collection<? extends GrantedAuthority> availableAuthorities =
+        tokenBasedAuthentication.getAuthorities();
+    HandlerMethod hm;
+    try {
+      hm = (HandlerMethod) handler;
+    } catch (ClassCastException e) {
+      throw e;
+    }
+    Method method = hm.getMethod();
+    if (method.isAnnotationPresent(NeedAllRoles.class)) {
+      String[] roles = method.getAnnotation(NeedAllRoles.class).roles();
+      ArrayList<SimpleGrantedAuthority> requiredAuthorities =
+          Arrays.stream(roles).map(role -> new SimpleGrantedAuthority(role))
+              .collect(Collectors.toCollection(ArrayList::new));
+      return availableAuthorities.containsAll(requiredAuthorities);
 
+    }
+
+    return false;
   }
 
   @Override

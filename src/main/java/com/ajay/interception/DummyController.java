@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DummyController {
 
   @GetMapping(value = "/dummy")
+  @NeedAllRoles(roles = {"ROLE_MANAGER", "ROLE_ADMINISTRATOR"})
   public String getDummy() {
     return "200 ok";
   }
