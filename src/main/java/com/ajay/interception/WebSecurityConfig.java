@@ -22,9 +22,8 @@ public class WebSecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
 
     httpSecurity.csrf().disable().cors().disable().authorizeHttpRequests().antMatchers("/dummy")
-        .permitAll().anyRequest().authenticated().and()
-        // .authenticationManager(authenticationManager)
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        .permitAll().anyRequest().authenticated().and().sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
     httpSecurity.addFilterBefore(jwtAuthenticationFilter,
         UsernamePasswordAuthenticationFilter.class);

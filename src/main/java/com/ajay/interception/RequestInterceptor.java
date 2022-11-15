@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -26,10 +27,7 @@ public class RequestInterceptor implements HandlerInterceptor {
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws ServletException {
     log.info("Inside prehandle");
-    TokenBasedAuthentication tokenBasedAuthentication =
-        (TokenBasedAuthentication) SecurityContextHolder.getContext().getAuthentication();
-    Collection<? extends GrantedAuthority> availableAuthorities =
-        tokenBasedAuthentication.getAuthorities();
+    Collection<? extends GrantedAuthority> availableAuthorities = extractAuthorities();
     HandlerMethod hm;
     try {
       hm = (HandlerMethod) handler;
@@ -49,6 +47,7 @@ public class RequestInterceptor implements HandlerInterceptor {
     return false;
   }
 
+
   @Override
   public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
       @Nullable ModelAndView modelAndView) throws Exception {
@@ -60,6 +59,14 @@ public class RequestInterceptor implements HandlerInterceptor {
   public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
       Object handler, @Nullable Exception ex) throws Exception {
     log.info("Inside after completion");
+  }
+
+  private Collection<? extends GrantedAuthority> extractAuthorities() {
+    TokenBasedAuthentication tokenBasedAuthentication =
+        (TokenBasedAuthentication) SecurityContextHolder.getContext().getAuthentication();
+    return tokenBasedAuthentication.getAuthorities() == null ? Collections.emptySet()
+        : tokenBasedAuthentication.getAuthorities();
+
   }
 
 }
