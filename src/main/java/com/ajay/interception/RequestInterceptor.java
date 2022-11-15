@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
-import com.ajay.interception.custom.annotations.NeedAllRoles;
-import com.ajay.interception.custom.annotations.NeedAnyRole;
+import com.ajay.interception.custom.annotations.HasAllRoles;
+import com.ajay.interception.custom.annotations.HasAnyRole;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,18 +39,18 @@ public class RequestInterceptor implements HandlerInterceptor {
     Method method = hm.getMethod();
 
 
-    if (method.isAnnotationPresent(NeedAllRoles.class)
-        && method.isAnnotationPresent(NeedAnyRole.class)) {
+    if (method.isAnnotationPresent(HasAllRoles.class)
+        && method.isAnnotationPresent(HasAnyRole.class)) {
       throw new IllegalStateException("Can specify only one of the annotations on a method.");
 
     }
 
-    if (method.isAnnotationPresent(NeedAllRoles.class)) {
+    if (method.isAnnotationPresent(HasAllRoles.class)) {
       return areAllRolesPresent(availableAuthorities, method);
 
     }
 
-    if (method.isAnnotationPresent(NeedAnyRole.class)) {
+    if (method.isAnnotationPresent(HasAnyRole.class)) {
       return isAnyRolePresent(availableAuthorities, method);
 
     }
@@ -75,7 +75,7 @@ public class RequestInterceptor implements HandlerInterceptor {
 
   private boolean areAllRolesPresent(Collection<? extends GrantedAuthority> availableAuthorities,
       Method method) {
-    String[] roles = method.getAnnotation(NeedAllRoles.class).roles();
+    String[] roles = method.getAnnotation(HasAllRoles.class).roles();
     ArrayList<SimpleGrantedAuthority> specifiedAuthorities =
         Arrays.stream(roles).map(role -> new SimpleGrantedAuthority(role))
             .collect(Collectors.toCollection(ArrayList::new));
@@ -84,7 +84,7 @@ public class RequestInterceptor implements HandlerInterceptor {
 
   private boolean isAnyRolePresent(Collection<? extends GrantedAuthority> availableAuthorities,
       Method method) {
-    String[] roles = method.getAnnotation(NeedAnyRole.class).roles();
+    String[] roles = method.getAnnotation(HasAnyRole.class).roles();
     ArrayList<SimpleGrantedAuthority> specifiedAuthorities =
         Arrays.stream(roles).map(role -> new SimpleGrantedAuthority(role))
             .collect(Collectors.toCollection(ArrayList::new));
