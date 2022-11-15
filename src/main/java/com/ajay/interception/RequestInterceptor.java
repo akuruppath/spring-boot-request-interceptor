@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
+import com.ajay.interception.custom.annotations.NeedAllRoles;
+import com.ajay.interception.custom.annotations.NeedAnyRole;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,12 +37,21 @@ public class RequestInterceptor implements HandlerInterceptor {
       throw e;
     }
     Method method = hm.getMethod();
+
+
+    if (method.isAnnotationPresent(NeedAllRoles.class)
+        && method.isAnnotationPresent(NeedAnyRole.class)) {
+      throw new IllegalStateException("Can specify only one of the annotations on a method.");
+
+    }
+
     if (method.isAnnotationPresent(NeedAllRoles.class)) {
-      String[] roles = method.getAnnotation(NeedAllRoles.class).roles();
-      ArrayList<SimpleGrantedAuthority> requiredAuthorities =
-          Arrays.stream(roles).map(role -> new SimpleGrantedAuthority(role))
-              .collect(Collectors.toCollection(ArrayList::new));
-      return availableAuthorities.containsAll(requiredAuthorities);
+      return areAllRolesPresent(availableAuthorities, method);
+
+    }
+
+    if (method.isAnnotationPresent(NeedAnyRole.class)) {
+      return isAnyRolePresent(availableAuthorities, method);
 
     }
 
@@ -59,6 +70,25 @@ public class RequestInterceptor implements HandlerInterceptor {
   public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
       Object handler, @Nullable Exception ex) throws Exception {
     log.info("Inside after completion");
+  }
+
+
+  private boolean areAllRolesPresent(Collection<? extends GrantedAuthority> availableAuthorities,
+      Method method) {
+    String[] roles = method.getAnnotation(NeedAllRoles.class).roles();
+    ArrayList<SimpleGrantedAuthority> specifiedAuthorities =
+        Arrays.stream(roles).map(role -> new SimpleGrantedAuthority(role))
+            .collect(Collectors.toCollection(ArrayList::new));
+    return availableAuthorities.containsAll(specifiedAuthorities);
+  }
+
+  private boolean isAnyRolePresent(Collection<? extends GrantedAuthority> availableAuthorities,
+      Method method) {
+    String[] roles = method.getAnnotation(NeedAnyRole.class).roles();
+    ArrayList<SimpleGrantedAuthority> specifiedAuthorities =
+        Arrays.stream(roles).map(role -> new SimpleGrantedAuthority(role))
+            .collect(Collectors.toCollection(ArrayList::new));
+    return availableAuthorities.contains(specifiedAuthorities);
   }
 
   private Collection<? extends GrantedAuthority> extractAuthorities() {

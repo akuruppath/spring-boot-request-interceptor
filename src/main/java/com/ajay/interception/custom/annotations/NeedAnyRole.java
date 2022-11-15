@@ -1,4 +1,4 @@
-package com.ajay.interception;
+package com.ajay.interception.custom.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface NeedAllRoles {
+public @interface NeedAnyRole {
 
   String[] roles() default "";
 }
